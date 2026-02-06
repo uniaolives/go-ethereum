@@ -56,3 +56,11 @@ cmd/evm/evm
 cmd/geth/geth
 cmd/rlpdump/rlpdump
 cmd/workload/workload
+
+# D-CODE 2.0 / Avalon
+**/node_modules/
+**/out/
+**/cache/
+**/__pycache__/
+*.txt
+install_foundry
