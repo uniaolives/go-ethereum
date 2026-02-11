@@ -1,0 +1,72 @@
+# ArkheOS/docker-compose.yml
+version: '3.8'
+
+services:
+  arkhe-core:
+    build: .
+    container_name: arkhe-core-v1
+    hostname: arkhe-n1
+    restart: unless-stopped
+
+    # Recursos do "Hardware Biológico"
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+    # Campo Morfogenético em RAM (1GB de SHM)
+    shm_size: 1gb
+    tmpfs:
+      - /dev/shm:rw,noexec,nosuid,size=1024m
+
+    # Portas expostas
+    ports:
+      - "8000:8000"  # MCP Server (SSE)
+
+    # Volumes persistentes
+    volumes:
+      - arkhe_data:/arkhe/data
+      - arkhe_logs:/arkhe/logs
+      - ./src:/arkhe/src:ro  # Monta código fonte
+
+    # Variáveis de ambiente críticas
+    environment:
+      - ARKHE_FIELD_PATH=/dev/shm/morphogenetic_field
+      - MCP_HOST=0.0.0.0
+      - MCP_PORT=8000
+      - SIMULATION_AGENTS=150
+      - SIMULATION_SPEED=1.0
+
+    # Health check (Verifica se o servidor MCP está respondendo)
+    healthcheck:
+      test: ["CMD", "curl", "-s", "http://localhost:8000/sse"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+    # Rede dedicada
+    networks:
+      - arkhe-net
+
+    # Logging
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  arkhe_data:
+  arkhe_logs:
+
+networks:
+  arkhe-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/24
